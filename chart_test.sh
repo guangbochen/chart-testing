@@ -111,28 +111,52 @@ main() {
             echo ''
 
             local error=
+            local chart_dir_name=
 
-            if [[ -z "$no_lint" ]]; then
-                if ! chartlib::validate_chart "$chart_dir"; then
-                    error=true
-                fi
-                if ! chartlib::lint_chart_with_all_configs "$chart_dir"; then
-                    error=true
-                fi
-            fi
+            chart_dir_name=$(basename "$chart_dir")
 
-            if [[ -z "$no_install" && -z "$error" ]]; then
-                if ! chartlib::install_chart_with_all_configs "$chart_dir"; then
-                    error=true
-                fi
-            fi
 
-            if [[ -z "$error" ]]; then
-                summary+=(" ✔︎ $chart_dir")
-            else
-                summary+=(" ✖︎ $chart_dir")
-                exit_code=1
-            fi
+            for sub_dir in "$chart_dir"/* ; do
+
+              local chart_dir_version=
+              chart_dir_version=$(basename "$sub_dir")
+
+              echo "---- Processing $chart_dir_version version of $chart_dir_name ----"
+              echo ''
+
+              if [[ -d $sub_dir ]]; then
+
+                #rename dirnname of helm lint constraint https://github.com/helm/helm/issues/1979
+                local validate_dir="$chart_dir/$chart_dir_name"
+                mv "$sub_dir" "$validate_dir"
+
+                if [[ -z "$no_lint" ]]; then
+                    if ! chartlib::validate_chart "$validate_dir"; then
+                        error=true
+                    fi
+                    if ! chartlib::lint_chart_with_all_configs "$validate_dir"; then
+                        error=true
+                    fi
+                fi
+
+                if [[ -z "$no_install" && -z "$error" ]]; then
+                    if ! chartlib::install_chart_with_all_configs "$validate_dir"; then
+                        error=true
+                    fi
+                fi
+
+                if [[ -z "$error" ]]; then
+                    summary+=(" ✔︎ $sub_dir")
+                else
+                    summary+=(" ✖︎ $sub_dir")
+                    exit_code=1
+                fi
+
+                mv "$validate_dir" "$sub_dir"
+
+              fi
+            done
+
         done
     else
         summary+=('No chart changes detected.')
