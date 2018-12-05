@@ -16,16 +16,19 @@ package chart
 
 import (
 	"fmt"
-	"github.com/helm/chart-testing/pkg/exec"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/helm/chart-testing/pkg/exec"
 
 	"github.com/helm/chart-testing/pkg/config"
 	"github.com/helm/chart-testing/pkg/tool"
 	"github.com/helm/chart-testing/pkg/util"
 	"github.com/pkg/errors"
 )
+
+const maxDirPath = 3
 
 // Git is the Interface that wraps Git operations.
 //
@@ -311,8 +314,28 @@ func (t *Testing) LintChart(chart string, valuesFiles []string) TestResult {
 			}
 		}
 	} else {
-		if err := t.helm.Lint(chart); err != nil {
+		var tmpChart = chart
+		pathElements := strings.Split(filepath.ToSlash(chart), "/")
+
+		// rename dirnname to cater helm lint constraint https://github.com/helm/helm/issues/1979
+		if len(pathElements) == maxDirPath {
+			pathElements[2] = pathElements[1]
+			tmpChart = strings.Join(pathElements, "/")
+			if err := util.RenameDir(chart, tmpChart); err != nil {
+				result.Error = err
+			}
+		}
+
+		// lint helm chart
+		if err := t.helm.Lint(tmpChart); err != nil {
 			result.Error = err
+		}
+
+		// reset dirnname to origin one
+		if len(pathElements) == maxDirPath {
+			if err := util.RenameDir(tmpChart, chart); err != nil {
+				result.Error = err
+			}
 		}
 	}
 
@@ -398,11 +421,16 @@ func (t *Testing) ComputeChangedChartDirectories() ([]string, error) {
 
 	var changedChartDirs []string
 	for _, file := range allChangedChartFiles {
-		pathElements := strings.SplitN(filepath.ToSlash(file), "/", 3)
+		pathElements := strings.SplitN(filepath.ToSlash(file), "/", 4)
 		if util.StringSliceContains(cfg.ExcludedCharts, pathElements[1]) {
 			continue
 		}
 		dir := path.Join(pathElements[0], pathElements[1])
+
+		// check if the chart dir contains multiple version of charts
+		if !t.chartUtils.IsChartDir(dir) {
+			dir = path.Join(pathElements[0], pathElements[1], pathElements[2])
+		}
 		// Only add if not already in list and double-check if it is a chart directory
 		if !util.StringSliceContains(changedChartDirs, dir) && t.chartUtils.IsChartDir(dir) {
 			changedChartDirs = append(changedChartDirs, dir)

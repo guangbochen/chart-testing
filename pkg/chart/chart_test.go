@@ -51,7 +51,7 @@ func (g fakeGit) ListChangedFilesInDirs(commit string, dirs ...string) ([]string
 		"incubator/excluded/values.yaml",
 		"stable/blah/Chart.yaml",
 		"stable/blah/README.md",
-		"stable/this-is-no-chart-dir/foo.md",
+		"stable/blah/this-is-no-chart-dir/foo.md",
 	}, nil
 }
 
@@ -97,17 +97,19 @@ func (v fakeAccountValidator) Validate(repoDomain string, account string) error 
 type fakeLinter struct{}
 
 func (l fakeLinter) YamlLint(yamlFile, configFile string) error { return nil }
-func (l fakeLinter) Yamale(yamlFile, schemaFile string)  error { return nil }
+func (l fakeLinter) Yamale(yamlFile, schemaFile string) error   { return nil }
 
 type fakeHelm struct{}
 
-func (h fakeHelm) Init() error { return nil }
-func (h fakeHelm) AddRepo(name, url string) error { return nil }
-func (h fakeHelm) BuildDependencies(chart string) error { return nil }
-func (h fakeHelm) Lint(chart string) error { return nil }
-func (h fakeHelm) LintWithValues(chart string, valuesFile string) error { return nil }
+func (h fakeHelm) Init() error                                                  { return nil }
+func (h fakeHelm) AddRepo(name, url string) error                               { return nil }
+func (h fakeHelm) BuildDependencies(chart string) error                         { return nil }
+func (h fakeHelm) Lint(chart string) error                                      { return nil }
+func (h fakeHelm) LintWithValues(chart string, valuesFile string) error         { return nil }
 func (h fakeHelm) Install(chart string, namespace string, release string) error { return nil }
-func (h fakeHelm) InstallWithValues(chart string, valuesFile string, namespace string, release string) error { return nil }
+func (h fakeHelm) InstallWithValues(chart string, valuesFile string, namespace string, release string) error {
+	return nil
+}
 func (h fakeHelm) DeleteRelease(release string) {}
 
 var ct Testing
@@ -123,8 +125,8 @@ func init() {
 		git:              fakeGit{},
 		chartUtils:       fakeChartUtils{},
 		accountValidator: fakeAccountValidator{},
-		linter: 		  fakeLinter{},
-		helm: 			  fakeHelm{},
+		linter:           fakeLinter{},
+		helm:             fakeHelm{},
 	}
 }
 
@@ -166,9 +168,9 @@ func TestValidateMaintainers(t *testing.T) {
 
 func TestLintChartMaintainerValidation(t *testing.T) {
 	type testData struct {
-			name     string
-			chartDir string
-			expected bool
+		name     string
+		chartDir string
+		expected bool
 	}
 
 	runTests := func(validate bool) {
@@ -181,7 +183,7 @@ func TestLintChartMaintainerValidation(t *testing.T) {
 			suffix = "without-validation"
 		}
 
-		testCases := []testData {
+		testCases := []testData{
 			{fmt.Sprintf("maintainers-%s", suffix), "testdata/valid_maintainers", true},
 			{fmt.Sprintf("no-maintainers-%s", suffix), "testdata/no_maintainers", !validate},
 		}

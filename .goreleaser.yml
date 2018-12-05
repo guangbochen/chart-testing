@@ -13,9 +13,9 @@ builds:
       - windows
     ldflags:
       - >-
-        -X github.com/helm/chart-testing/app/cmd.Version={{ .Tag }}
-        -X github.com/helm/chart-testing/app/cmd.GitCommit={{ .Commit }}
-        -X github.com/helm/chart-testing/app/cmd.BuildDate={{ .Date }}
+        -X github.com/guangbochen/chart-testing/app/cmd.Version={{ .Tag }}
+        -X github.com/guangbochen/chart-testing/app/cmd.GitCommit={{ .Commit }}
+        -X github.com/guangbochen/chart-testing/app/cmd.BuildDate={{ .Date }}
 archive:
   format_overrides:
     - goos: windows
@@ -35,11 +35,11 @@ dockers:
   - goos: linux
     goarch: amd64
     binary: ct
-    skip_push: false
+    skip_push: true
     dockerfile: Dockerfile
     image_templates:
-      - quay.io/helmpack/chart-testing:{{ .Tag }}
-      - quay.io/helmpack/chart-testing:latest
+      - guangbo/chart-testing:{{ .Tag }}
+      - guangbo/chart-testing:latest
     build_flag_templates:
       - --build-arg=dist_dir=
       - --label=org.label-schema.schema-version=1.0

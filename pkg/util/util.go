@@ -16,15 +16,16 @@ package util
 
 import (
 	"fmt"
-	"github.com/Masterminds/semver"
-	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"math/rand"
 	"os"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/Masterminds/semver"
+	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
 
 const chars = "1234567890abcdefghijklmnopqrstuvwxyz"
@@ -172,4 +173,8 @@ func PrintDelimiterLine(delimiterChar string) {
 		delim[i] = delimiterChar
 	}
 	fmt.Println(strings.Join(delim, ""))
+}
+
+func RenameDir(src, dst string) (err error) {
+	return os.Rename(src, dst)
 }
