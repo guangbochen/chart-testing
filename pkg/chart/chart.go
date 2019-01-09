@@ -306,36 +306,47 @@ func (t *Testing) LintChart(chart string, valuesFiles []string) TestResult {
 		}
 	}
 
+	var tmpChart = chart
+
+	// rename dirnname to cater helm lint constraint https://github.com/helm/helm/issues/1979
+	pathElements := strings.Split(filepath.ToSlash(chart), "/")
+	if len(pathElements) == maxDirPath {
+		fmt.Printf("rename chart directory %s to %s\n", pathElements[2], pathElements[1])
+		pathElements[2] = pathElements[1]
+		tmpChart = strings.Join(pathElements, "/")
+		if err := util.RenameDir(chart, tmpChart); err != nil {
+			result.Error = err
+		}
+	}
+
+	// lint helm chart
 	if len(valuesFiles) > 0 {
 		for _, valuesFile := range valuesFiles {
-			if err := t.helm.LintWithValues(chart, valuesFile); err != nil {
-				result.Error = err
-				break
+			if !strings.EqualFold(tmpChart, chart) {
+				fileElements := strings.Split(filepath.ToSlash(valuesFile), "/")
+				fileElements[2] = fileElements[1]
+				tmpValuesFile := strings.Join(fileElements, "/")
+				if err := t.helm.LintWithValues(tmpChart, tmpValuesFile); err != nil {
+					result.Error = err
+					break
+				}
+			} else {
+				if err := t.helm.LintWithValues(chart, valuesFile); err != nil {
+					result.Error = err
+					break
+				}
 			}
 		}
 	} else {
-		var tmpChart = chart
-		pathElements := strings.Split(filepath.ToSlash(chart), "/")
-
-		// rename dirnname to cater helm lint constraint https://github.com/helm/helm/issues/1979
-		if len(pathElements) == maxDirPath {
-			pathElements[2] = pathElements[1]
-			tmpChart = strings.Join(pathElements, "/")
-			if err := util.RenameDir(chart, tmpChart); err != nil {
-				result.Error = err
-			}
-		}
-
-		// lint helm chart
 		if err := t.helm.Lint(tmpChart); err != nil {
 			result.Error = err
 		}
+	}
 
-		// reset dirnname to origin one
-		if len(pathElements) == maxDirPath {
-			if err := util.RenameDir(tmpChart, chart); err != nil {
-				result.Error = err
-			}
+	// reset dirnname to origin one
+	if len(pathElements) == maxDirPath {
+		if err := util.RenameDir(tmpChart, chart); err != nil {
+			result.Error = err
 		}
 	}
 
