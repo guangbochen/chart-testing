@@ -220,9 +220,10 @@ func (t *Testing) processCharts(action func(chart string, valuesFiles []string) 
 	for _, chart := range charts {
 		valuesFiles := t.FindValuesFilesForCI(chart)
 
-		if err := t.helm.BuildDependencies(chart); err != nil {
-			return nil, errors.Wrapf(err, "Error building dependencies for chart '%s'", chart)
-		}
+		// skip to run helm dep build, because in our chart git repo we will add the sub-charts into charts path directly
+		//if err := t.helm.BuildDependencies(chart); err != nil {
+		//	return nil, errors.Wrapf(err, "Error building dependencies for chart '%s'", chart)
+		//}
 
 		result := action(chart, valuesFiles)
 		if result.Error != nil {
