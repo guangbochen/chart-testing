@@ -48,6 +48,10 @@ func (g Git) MergeBase(commit1 string, commit2 string) (string, error) {
 }
 
 func (g Git) ListChangedFilesInDirs(commit string, dirs ...string) ([]string, error) {
+	_, err := g.exec.RunProcessAndCaptureOutput("git", "config", "diff.renameLimit", "9999")
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not config git diff.renameLimit to 9999")
+	}
 	changedChartFilesString, err :=
 		g.exec.RunProcessAndCaptureOutput("git", "diff", "--find-renames", "--name-only", commit, "--", dirs)
 	if err != nil {
